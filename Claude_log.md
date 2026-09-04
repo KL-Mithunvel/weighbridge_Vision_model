@@ -1,5 +1,51 @@
 # Claude Log
 
+## 2026-09-04 — Project scope + Gate 1 data audit (weighbridge fraud detection)
+- User described the actual project for the first time: a company
+  weighbridge monitored by camera. Vehicles bring in firewood, get weighed
+  loaded ("gross"), dump the load, get weighed empty ("tare"). Payment is
+  tied to declared firewood weight — fraud incentive. Models needed:
+  (1) identify the truck, (2) classify load state (loaded/empty),
+  (3) if loaded, is it firewood or something else (flag if not),
+  (4) if empty, is it truly empty or is there leftover material (rope,
+  wood debris) — flag if not. Filled this into root `CLAUDE.md` → Project
+  Overview.
+- User provided `wb_ai_reports.sqlite3` (this explains the file that
+  appeared unexplained earlier in this session — resolved, not a mystery).
+  Moved it to `data/wb_ai_reports.sqlite3` (gitignored, per this template's
+  "datasets never committed" rule — it's real company transaction data).
+- Ran the Gate 1 audit against it and wrote up `docs/DATA_AUDIT.md`. Key
+  findings:
+  - It's an **existing LLM-based audit system's text verdicts** about
+    photos already analyzed per transaction — not raw images, and not
+    human-verified ground truth. `report_json` in `weighment_ai_reports`
+    has exactly the same 8 fields as the unpacked `ai_report_fields`
+    table, confirmed by inspection — no hidden image refs or bounding
+    boxes.
+  - 769 rows / 765 distinct transactions (transaction_id 1 has 4 duplicate
+    re-run rows, 154 has 2 — dedupe by `serial`, keep latest `created_at`,
+    if this table is ever used for labels).
+  - `feedback` column is non-null in 635/769 (82%) rows — contradicts the
+    "usually NULL" description given; sampled values are generic
+    process-improvement boilerplate, not incident-specific.
+  - **Load-bearing gap**: zero rows describe a non-firewood load — every
+    transaction's `load_assessment` mentions "firewood," no row matches
+    "not firewood"/"different material" phrasing. This dataset alone
+    cannot establish true-positive sensitivity for a "is this actually
+    firewood" classifier (same shape as the Tile_Sorting known-intact-only
+    calibration gap already documented in root `CLAUDE.md`).
+  - Material variety is narrow (Karuvai wet firewood: 552/765 mentions;
+    no other species named in free text).
+  - "Not truly empty" signal exists (rope/debris/residual mentions in a
+    meaningful minority of rows) but the free text conflates two things:
+    rope used to tie down the *load* (normal, seen in gross photos) vs.
+    leftover material found in *tare/empty* photos (the actual signal) —
+    would need a dedicated re-read to separate.
+  - No AWS image inventory yet — Gate 1 is **not** complete; this audit
+    covers only the SQL side. Logged as the next required step.
+- Updated `TODO.md` (Gate 1 now "In Progress," AWS image access + join
+  question + non-firewood-negatives sourcing added as open items).
+
 ## 2026-09-04 — Roboflow plugin wiring
 - User asked to plug in Roboflow (github.com/roboflow/computer-vision-skills)
   and its skills. Investigated first: the `roboflow` plugin (v0.1.1) is

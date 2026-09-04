@@ -13,12 +13,30 @@
 
 ## Project Overview
 
-_Template placeholder — fill in for the concrete project:_
+A company weighbridge, monitored by camera, handles vehicles bringing in
+firewood: a truck is weighed loaded ("gross"), dumps its load, and is
+weighed again empty ("tare"). Payment is based on the declared firewood
+weight, which creates a fraud incentive — this is an integrity/fraud check,
+not a quality-grading task. False negatives (missing an actual load
+substitution, or a truck that wasn't fully unloaded) are the costly failure
+mode.
 
-- What the system inspects/detects/classifies, and for whom.
+Vision models to build:
+
+1. **Identify the truck** in frame.
+2. **Classify load state**: loaded vs. empty.
+3. **If loaded**: is the visible material firewood, or something else?
+   Flag if not firewood.
+4. **If empty**: is it *actually* empty, or does it still have leftover
+   material (rope, wood debris, etc.)? Flag if not truly empty.
+
 - Owner: kl mithunvel (klm@smtw.in)
-- License, runtime (Python version, venv location), entry points.
-- Current build phase.
+- License, runtime (Python version, venv location), entry points: TBD.
+- Current build phase: **Gate 1 (data understanding) in progress.** An
+  existing LLM-based audit system's text verdicts (769 reports, SQL) have
+  been audited — see `docs/DATA_AUDIT.md`. Raw camera images live in AWS
+  and have not yet been inventoried; Gate 1 is not complete until that
+  happens.
 
 ---
 
