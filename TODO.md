@@ -16,3 +16,7 @@
 - [ ] Add a `.tflite` export recipe alongside ONNX in the model-folder template
   once a project actually needs it (MCU-class target).
 - [ ] Evaluate the planned pip→`uv` migration for this template's setup steps.
+- [ ] Set `ROBOFLOW_API_KEY` in a project-local `.env` (see `.env.example`,
+  `docs/ROBOFLOW_INTEGRATION.md`) to activate the Roboflow MCP server —
+  plugin/skills are already installed (user scope) but MCP calls currently
+  fail with `CONNECTION_CLOSED` for lack of a key.
