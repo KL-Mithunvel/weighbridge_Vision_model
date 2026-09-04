@@ -1,0 +1,12 @@
+# Baseline tooling deps (tools/standard_results.py). Project-specific training
+# stacks (torch/ultralytics/transformers/...) are added per project — pin at
+# least major versions, and record the reason next to any exact pin
+# (see CLAUDE.md Development Rules #7).
+#
+# GPU note (Gate 2): the default torch wheel is CPU-only. With an NVIDIA GPU,
+# install the CUDA build (documented manual step — requirements.txt cannot
+# express the index):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+numpy>=1.26
+matplotlib>=3.8
+PyYAML>=6.0

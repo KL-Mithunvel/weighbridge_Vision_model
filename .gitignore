@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Datasets and media — never committed (Gate 1 / Data Files rule)
+data/
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tif
+*.tiff
+*.wav
+*.mp4
+*.avi
+
+# Model weights and training output — regenerable, never committed
+runs/
+dataset/
+*.pt
+*.pth
+*.safetensors
+*.onnx
+*.tflite
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

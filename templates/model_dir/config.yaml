@@ -1,0 +1,41 @@
+# <model_name> — all tunable parameters live here, never inline in scripts.
+# Paths are relative to this folder.
+
+# Gate 3 record — keep in sync with the logged deployment-target decision:
+deployment:
+  target: "<device / API the model must run on in the end system>"
+  export_format: "onnx"          # onnx | tflite | pt | ...
+  size_budget_mb: 0              # exported-file budget the target can carry
+  fallback_model: "<smaller architecture to try if this one is too slow>"
+
+dataset:
+  source_dataset_dir: "../../data/<dataset_name>"   # raw labelled source (gitignored)
+  dataset_dir: "dataset"                            # generated split output (gitignored)
+  classes: []                                       # e.g. ["3A", "3B", "4", "5"]
+
+split:
+  seed: 42
+  val_fraction: 0.2
+  group_by_source_image: true    # REQUIRED true if augmented/near-duplicate
+                                 # variants exist — prevents train/val leakage
+  oversample_train: true         # duplicate minority-class train images up to
+                                 # the majority count (class-imbalance fix)
+
+model:
+  checkpoint: "<pretrained checkpoint id, e.g. yolo26s-cls.pt or google/vit-base-patch16-224-in21k>"
+  image_size: 224
+
+train:
+  output_dir: "runs/<run_name>"
+  epochs: 30
+  batch_size: 16
+  learning_rate: 5.0e-5
+  patience: 8                    # early stopping — small datasets overfit fast
+  # Augmentation: reflect REAL domain invariances (e.g. no canonical "up" ->
+  # rotation/flips). Anything beyond that gets tested against a clean
+  # held-out baseline before adoption (see docs/MV_WORKFLOW.md Phase 5).
+  augmentation:
+    hflip_prob: 0.5
+    vflip_prob: 0.5
+    ninety_rotation: true
+    brightness_percent: 10
