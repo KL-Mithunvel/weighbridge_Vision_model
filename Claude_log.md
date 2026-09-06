@@ -32,7 +32,34 @@
   pending) and `docs/DATA_AUDIT.md` ("What's missing" item 1 now points at the
   tooling, still blocked on credentials).
 - **Gate 1 still not complete** — the crawl has not run (no credentials yet).
-  Nothing committed this session.
+- Owner committed the 12 files as `1939156` ("AWS tooling anf boto 3v").
+
+### Evaluated `aws/agent-toolkit-for-aws` (owner asked to check for useful plugins/skills)
+- **What it is**: an AWS MCP server (`call_aws` = authenticated read/write to
+  300+ services, `run_script` = sandboxed Python, `search_documentation`,
+  `retrieve_skill`), four Claude Code plugins (`aws-core`, `aws-agents`,
+  `aws-data-analytics`, `aws-agents-for-devsecops`) from the official
+  marketplace, and ~13 core + specialized skills (IaC/CDK, serverless,
+  containers, billing, CloudWatch, Bedrock, …). Requires `uv`.
+- **S3-relevant skills**: only two — `securing-s3-buckets` (bucket-admin
+  hardening: policy/encryption/CloudTrail) and `troubleshooting-s3-files` (the
+  S3 *mount* product, not the API). Neither covers plain read-only
+  list/download.
+- **Decision: not added.** Reasons: (1) neither S3 skill fits a read-only
+  image pull; (2) `call_aws` is write-capable across all of AWS — adding it
+  contradicts this project's deliberately minimal read-only posture in
+  `docs/AWS_ACCESS.md`; (3) CLAUDE.md favours minimal pinned testable tooling,
+  and `development/aws_s3.py` (19 tests, offline) already covers the need;
+  (4) adds a `uv` dependency and a second MCP server (the Roboflow one is
+  already failing to connect this session).
+- **Revisit if**: the project later needs to *provision* AWS infra (Lambda,
+  IaC) or do data-lake / Athena / Glue work on the archive — then `aws-core`
+  or `aws-data-analytics` become relevant.
+- **Own S3-access skill?** Not worth it for this project — the tooling +
+  `docs/AWS_ACCESS.md` is sufficient and a skill would just duplicate it. A
+  small generic "Gate 1 cloud-bucket ingestion" skill *could* be worth adding
+  to the `claude_MV` template-repo lineage if the pattern recurs across
+  projects; logged as a low-priority template consideration, not a task here.
 
 ## 2026-09-04 — Project scope + Gate 1 data audit (weighbridge fraud detection)
 - User described the actual project for the first time: a company
