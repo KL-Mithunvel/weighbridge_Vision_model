@@ -160,6 +160,12 @@ scoring one and training on the other leaks obvious context).
    gross/tare photos pair to a `serial`/`transaction_id`, capture
    conditions (lighting, angle, distance, day/night), file naming/storage
    layout. Nothing in this document substitutes for that.
+   - Bucket: `smtw-weighbridge-archive` (read-only IAM access). Full access
+     instructions in `docs/AWS_ACCESS.md`.
+   - Tooling is ready: `development/inventory_s3.py` crawls the bucket and
+     writes `docs/data_inventory/s3_summary.json`. **Blocked on the owner
+     creating an IAM access key and filling `.env`.** Run it, then update
+     this section with the actual figures.
 2. Decide whether `ai_report_fields` text can be joined to images by
    `serial`/`transaction_id` to bootstrap weak labels (e.g., transactions
    whose `load_assessment` says "no visible remnants" as clean-empty

@@ -1,5 +1,39 @@
 # Claude Log
 
+## 2026-09-06 — AWS S3 access + Gate 1 image-inventory tooling
+- Owner pasted the S3 access instructions for bucket `smtw-weighbridge-archive`
+  (read-only IAM access, personal access key per laptop, region TBD — example
+  `ap-south-1`). Task: build the access/inventory tooling and document the
+  instructions in full.
+- Documented everything in `docs/AWS_ACCESS.md`: IAM key creation, region
+  lookup, the three credential-passing options, list/download examples, the
+  error→meaning troubleshooting table, the security rules, how it maps to the
+  repo, and the Roboflow `cloud-storage` mirror as an alternative path (with the
+  Gate 3 weight-export caveat).
+- New tooling under `development/` (dev-only analysis, Gate 1 pattern):
+  - `config.yaml` — bucket/region/prefixes/sample size/output paths, no
+    hardcoding.
+  - `aws_s3.py` — network I/O (`make_client`, `list_objects`,
+    `download_object`, `head_object`) kept separate from pure logic
+    (`credentials_status`, `summarize_objects`, `pair_gross_tare`,
+    `extract_key_facets`, key helpers). `S3AccessError` maps botocore errors to
+    the troubleshooting-table hints.
+  - `inventory_s3.py` — paginated crawl → `data/s3_inventory/s3_objects.jsonl`
+    (gitignored) + `docs/data_inventory/s3_summary.json` (committed aggregate,
+    no image content) + seeded resolution sample via Pillow + console report.
+    Exits cleanly with instructions when `.env` has no keys.
+  - `README.md` — run order and outputs.
+- `tests/test_aws_s3.py` (+ `tests/conftest.py`) — 19 pytest cases over the
+  pure layer, no network. All pass. `py_compile` clean.
+- Deps: added `boto3`, `python-dotenv`, `pillow`, `pytest` to
+  `requirements.txt` (installed in `.venv`). Added `AWS_ACCESS_KEY_ID` /
+  `AWS_SECRET_ACCESS_KEY` / `AWS_DEFAULT_REGION` to `.env.example`.
+- Updated `TODO.md` (tooling done; owner to create key + fill `.env`; run
+  pending) and `docs/DATA_AUDIT.md` ("What's missing" item 1 now points at the
+  tooling, still blocked on credentials).
+- **Gate 1 still not complete** — the crawl has not run (no credentials yet).
+  Nothing committed this session.
+
 ## 2026-09-04 — Project scope + Gate 1 data audit (weighbridge fraud detection)
 - User described the actual project for the first time: a company
   weighbridge monitored by camera. Vehicles bring in firewood, get weighed

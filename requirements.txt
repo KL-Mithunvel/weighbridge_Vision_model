@@ -10,3 +10,13 @@
 numpy>=1.26
 matplotlib>=3.8
 PyYAML>=6.0
+
+# Gate 1 — AWS S3 access + image inventory (development/aws_s3.py,
+# development/inventory_s3.py). See docs/AWS_ACCESS.md.
+boto3>=1.34            # S3 client for bucket smtw-weighbridge-archive
+python-dotenv>=1.0     # load AWS_* creds from gitignored .env (not auto-read by boto3)
+pillow>=10.0           # probe sampled image resolution / format during inventory
+
+# Test runner (tests/). Migration to `uv` is planned — prefer `uv pip`/`uv run`
+# when that lands.
+pytest>=8.0

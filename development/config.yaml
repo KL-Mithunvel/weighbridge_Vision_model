@@ -1,0 +1,43 @@
+# Configuration for the AWS S3 access + Gate 1 image-inventory tooling.
+# All tunables live here — never hardcode them in aws_s3.py / inventory_s3.py.
+# Paths are relative to the repository root.
+
+s3:
+  bucket: "smtw-weighbridge-archive"
+  # Region of the bucket. S3 -> bucket -> Properties -> AWS Region.
+  # Overridden by AWS_DEFAULT_REGION in the environment / .env if set there.
+  region: "ap-south-1"
+  # Restrict the crawl to these key prefixes. Empty string = whole bucket.
+  # Add more once the folder layout is known (e.g. "gross/", "tare/", "2026/").
+  prefixes:
+    - ""
+  # Hard cap on objects listed, as a safety brake on a first run against an
+  # unknown bucket. null = no limit (list everything).
+  max_objects: null
+
+inventory:
+  # File extensions counted as images (lower-cased comparison).
+  image_extensions: [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"]
+  # How many image objects to actually download to probe real resolution /
+  # format / mode. Kept small — this is a sample, not a full pull.
+  resolution_sample_size: 40
+  # Seed for the resolution sample so a re-run probes the same objects.
+  sample_seed: 42
+  # Regex applied to each object key to pull out a transaction/serial id and a
+  # gross/tare tag, so the inventory can report how photos pair to the SQL
+  # reports (docs/DATA_AUDIT.md). Leave null until the real key format is known;
+  # the inventory still runs and just skips the pairing breakdown.
+  key_pattern: null
+  # Example once the layout is known, e.g. keys like
+  #   "2026/20260306-001/gross_1.jpg"
+  # key_pattern: '(?P<serial>\d{8}-\d{3}).*(?P<state>gross|tare)'
+
+paths:
+  # Full per-object listing (key, size, last-modified, etag, storage class).
+  # Under data/ -> gitignored. This is the raw crawl output.
+  objects_jsonl: "data/s3_inventory/s3_objects.jsonl"
+  # Downloaded resolution-probe samples. Gitignored.
+  sample_dir: "data/s3_inventory/samples"
+  # Aggregated, committed audit record — counts and histograms only, no image
+  # content. This is the Gate 1 artefact that goes in git.
+  summary_json: "docs/data_inventory/s3_summary.json"
