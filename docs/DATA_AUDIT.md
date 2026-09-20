@@ -1,7 +1,7 @@
 # Data Audit — Weighbridge AI Reports (Gate 1)
 
-Last updated: 2026-09-04. Covers the SQL side of the data only — see
-"What's missing" below for what Gate 1 still needs.
+Last updated: 2026-09-20. Covers **both** the SQL report data and the AWS
+image archive — see "What's missing" below for what Gate 1 still needs.
 
 ## Project context
 
@@ -129,9 +129,113 @@ string, same 8 verdict fields as above), `summary_text`, `flags_json`,
   several terms): `trailer` 294, `tractor` 224, `tractor-trailer` 137,
   `three-wheeler` 86, `small truck` 40, `pickup` 16, `auto-rickshaw` 4,
   `lorry` 3.
-- **No confirmed linkage yet between `transaction_id`/`serial` and the
-  actual image files in AWS** — that mapping has to be established before
-  any of this text can be used to weakly-label images.
+- ~~**No confirmed linkage yet between `transaction_id`/`serial` and the
+  actual image files in AWS**~~ — **resolved 2026-09-20**: the S3 folder
+  name is the `serial`; 687 serials / 9,987 photos join once both sides are
+  dash-normalised. See the AWS inventory section above.
+
+## AWS image archive inventory (crawled 2026-09-20)
+
+Source: `python development/inventory_s3.py` against
+`s3://smtw-weighbridge-archive` (`ap-south-1`). Committed record:
+`docs/data_inventory/s3_summary.json`. Raw per-object listing:
+`data/s3_inventory/s3_objects.jsonl` (gitignored).
+
+| | |
+|---|---|
+| Objects | **10,085**, all images, **17.64 GB** |
+| Formats | `.jpg` 10,058, `.jpeg` 27 — all JPEG/RGB in the sample |
+| Storage class | **`GLACIER_IR` for all 10,085 objects** |
+| Distinct serials | **700** (696 after de-duping the dual-format ones) |
+| Photos per serial | min 2, max 18, **median 15** |
+| Capture date range | 2026-03-06 → **2026-08-05** |
+| S3 upload range | 2026-07-04 → 2026-09-19 (bulk backfill, not capture time) |
+
+### Key layout
+
+```
+weighments-YYYYMM/<serial>/<YYYYMMDD_HHMMSS_hash8>.jpg
+```
+
+**Two serial-folder conventions exist**, which any consumer must handle:
+
+- dashed `YYYY-MM-DD-NNN` — 688 serials, 9,955 photos (the norm)
+- flat `YYYYMMDD-NNN` — 12 serials, 130 photos, only on 2026-03-06/07
+- 4 serials (`20260307-001`…`-004`) appear under **both** — likely duplicate
+  copies of the same weighment. Not yet byte-compared.
+
+The same split exists in SQL (`weighment_ai_reports.serial`: 753 dashed, 12
+flat). Normalising both sides to `YYYYMMDD-NNN` is what makes them join.
+
+### SQL ↔ image linkage — **resolved**
+
+The folder name *is* the report `serial`. After normalising dashes on both
+sides:
+
+| | |
+|---|---|
+| S3 distinct serials | 696 |
+| SQL distinct serials | 761 (from 765 raw — 4 differ only by dash form) |
+| **Both photos and a report** | **687** |
+| Photos under a linked report | **9,987 / 10,085 (99.0%)** |
+| Report but no photos | 74 — **all August 2026** |
+| Photos but no report | 9 (4× Mar, 4× Jun, 1× Jul) |
+
+The 74 report-only serials are explained by the archive stopping at
+2026-08-05 while SQL reports run to 2026-08-26 — the last ~3 weeks of images
+were never uploaded. Worth asking the bucket admin whether they exist.
+
+### Gross/tare separation — **not encoded in the filenames**
+
+Nothing in the key marks a photo as gross or tare; each serial is one flat
+folder. Capture timestamps do split cleanly, though: splitting each serial's
+photos at any gap > 5 minutes yields
+
+| clusters | serials |
+|---|---|
+| 2 | **690 (98.6%)** |
+| 3 | 4 |
+| 1 | 6 |
+
+with a median largest intra-serial gap of ~22 min (p10 14 min, p90 37 min) —
+consistent with weigh-in (loaded) → dump → weigh-out (empty). So the first
+cluster is *probably* gross and the second *probably* tare.
+
+> **PROVISIONAL — do not treat as ground truth.** This is inferred from
+> timing alone, never visually verified. Before it is used as a weak label,
+> confirm it against a hand-checked sample (and the 10 serials that do not
+> split into exactly 2 clusters need individual handling). Per root
+> `CLAUDE.md` rule 6 this stays labelled provisional until verified.
+
+### Capture conditions — heterogeneous resolution
+
+From a seeded random sample of 40 images (all 40 downloaded and probed OK):
+
+| resolution | n | note |
+|---|---|---|
+| 4160x1920 | 26 | dominant, ultra-wide 2.17:1 — likely stitched/multi-sensor |
+| 1920x1080 | 5 | standard 16:9 |
+| 2688x1520 | 2 | |
+| 3490x1811, 3431x2049, 3140x1812, 3287x1788, 3314x1824 | 1 each | irregular — suggests cropped |
+| 1080x1920, 1920x4160 | 1 each | **portrait** — rotated or a different camera |
+
+This is not a single fixed camera geometry. Consequences for Gate 1:
+
+- **Absolute-pixel measurements will not transfer across these images.** Per
+  root `CLAUDE.md`, prefer scale-independent ratios.
+- Aspect ratios span 0.46 → 2.17. A naive square resize will distort the
+  ultra-wide majority badly; letterboxing or aspect-aware cropping needs to
+  be an explicit, tested decision.
+- The irregular sizes suggest some images are already crops of a larger
+  frame — provenance per resolution class is not yet established.
+
+### Cost / retrieval caveat
+
+Every object is **`GLACIER_IR`** (Glacier Instant Retrieval). Reads succeed
+immediately, but each GET bills a per-GB retrieval fee on top of storage. A
+full 17.64 GB pull is therefore a **paid** operation, and re-pulling it
+repeatedly is wasteful. Download once to local disk, keep it, and prefer the
+committed JSON summary for anything that does not need pixels.
 
 ## Label provenance and trustworthiness
 
@@ -148,24 +252,33 @@ independently verified.
 
 ## Splits / scale-dependence
 
-Not yet applicable — no images in hand. Once AWS image data is pulled,
-apply the standard rule from root `CLAUDE.md`: split by source-image group
-/ by transaction, fixed seed, and confirm a transaction's gross and tare
-photos never straddle train/val/test (they're the same session, so
-scoring one and training on the other leaks obvious context).
+Images are now inventoried (not yet pulled in bulk). The standard rule from
+root `CLAUDE.md` applies, and the inventory makes it concrete:
+
+- **Split by `serial`, never by photo.** A serial holds a median of 15
+  photos of the same truck in the same session; splitting by image would
+  leak near-duplicates across train/val/test and inflate every score.
+- Fixed seed, reproducible from `prepare_dataset.py`.
+- The 4 dual-format serials must be de-duplicated *before* splitting, or the
+  same session lands on both sides.
+- **Scale-dependence is a live risk here**: resolutions range 1080x1920 to
+  4160x1920 (aspect 0.46–2.17). Any calibrated absolute-pixel value is
+  resolution-specific and will not transfer; prefer ratios.
 
 ## What's missing before Gate 1 is fully clear
 
-1. **Access and inventory the AWS image data**: counts, resolution, how
-   gross/tare photos pair to a `serial`/`transaction_id`, capture
-   conditions (lighting, angle, distance, day/night), file naming/storage
-   layout. Nothing in this document substitutes for that.
-   - Bucket: `smtw-weighbridge-archive` (read-only IAM access). Full access
-     instructions in `docs/AWS_ACCESS.md`.
-   - Tooling is ready: `development/inventory_s3.py` crawls the bucket and
-     writes `docs/data_inventory/s3_summary.json`. **Blocked on the owner
-     creating an IAM access key and filling `.env`.** Run it, then update
-     this section with the actual figures.
+1. ~~**Access and inventory the AWS image data**~~ — **done 2026-09-20**,
+   see the AWS inventory section above. What that crawl left open:
+   - **Gross/tare assignment is provisional** (timestamp clustering only)
+     and needs verification against a hand-checked sample.
+   - **Capture conditions were not assessed** — the crawl measured
+     resolution/format, but lighting, angle, distance and day/night mix
+     still require actually looking at images. Timestamps show captures
+     across the day; no night/day breakdown has been made.
+   - **The 4 dual-format serials** have not been byte-compared to confirm
+     they are true duplicates.
+   - **74 August serials have reports but no images**; ask the bucket admin
+     whether the 2026-08-05 → 08-26 images exist anywhere.
 2. Decide whether `ai_report_fields` text can be joined to images by
    `serial`/`transaction_id` to bootstrap weak labels (e.g., transactions
    whose `load_assessment` says "no visible remnants" as clean-empty

@@ -1,0 +1,92 @@
+{
+  "generated_at": "2026-09-20T09:32:37+00:00",
+  "bucket": "smtw-weighbridge-archive",
+  "prefixes_crawled": [
+    ""
+  ],
+  "max_objects_cap": null,
+  "aggregate": {
+    "total_objects": 10085,
+    "total_bytes": 18939678697,
+    "image_objects": 10085,
+    "image_bytes": 18939678697,
+    "non_image_objects": 0,
+    "objects_by_top_level_prefix": {
+      "weighments-202607": 2807,
+      "weighments-202606": 2619,
+      "weighments-202605": 1899,
+      "weighments-202603": 1773,
+      "weighments-202604": 632,
+      "weighments-202608": 355
+    },
+    "bytes_by_top_level_prefix": {
+      "weighments-202607": 4947563333,
+      "weighments-202606": 4759933261,
+      "weighments-202603": 4043703387,
+      "weighments-202605": 3392535441,
+      "weighments-202604": 1158403411,
+      "weighments-202608": 637539864
+    },
+    "objects_by_extension": {
+      ".jpg": 10058,
+      ".jpeg": 27
+    },
+    "objects_by_year_month": {
+      "2026-07": 5687,
+      "2026-08": 3039,
+      "2026-09": 1359
+    },
+    "objects_by_storage_class": {
+      "GLACIER_IR": 10085
+    },
+    "largest_object": {
+      "key": "weighments-202606/2026-06-01-009/20260601_175943_2a0b49f2.jpg",
+      "size": 4409192
+    },
+    "last_modified_range": [
+      "2026-07-04T21:00:03+00:00",
+      "2026-09-19T21:00:19+00:00"
+    ]
+  },
+  "gross_tare_pairing": {
+    "pattern_matched": true,
+    "keys_seen": 10085,
+    "keys_unmatched": 0,
+    "distinct_serials": 700,
+    "serials_with_gross_and_tare": 0,
+    "serials_gross_only": 0,
+    "serials_tare_only": 0,
+    "photos_per_serial_min": 2,
+    "photos_per_serial_max": 18
+  },
+  "resolution_sample": {
+    "sampled": 40,
+    "succeeded": 40,
+    "resolutions": {
+      "4160x1920": 26,
+      "1920x1080": 5,
+      "2688x1520": 2,
+      "1080x1920": 1,
+      "3490x1811": 1,
+      "3431x2049": 1,
+      "3140x1812": 1,
+      "1920x4160": 1,
+      "3287x1788": 1,
+      "3314x1824": 1
+    },
+    "formats": {
+      "JPEG": 40
+    },
+    "modes": {
+      "RGB": 40
+    },
+    "failures": [],
+    "sample_dir": "data\\s3_inventory\\samples"
+  },
+  "notes": [
+    "Object counts/sizes are exact for the crawled prefixes.",
+    "last_modified is the S3 upload time, not necessarily capture time.",
+    "Resolution figures are from a random sample only \u2014 see sampled/succeeded.",
+    "gross_tare_pairing is populated only once inventory.key_pattern is set in development/config.yaml."
+  ]
+}

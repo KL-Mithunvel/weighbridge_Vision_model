@@ -27,7 +27,15 @@ inventory:
   # gross/tare tag, so the inventory can report how photos pair to the SQL
   # reports (docs/DATA_AUDIT.md). Leave null until the real key format is known;
   # the inventory still runs and just skips the pairing breakdown.
-  key_pattern: null
+  # Real layout (confirmed 2026-09-20 by the first crawl):
+  #   weighments-YYYYMM/<YYYY-MM-DD-NNN>/<YYYYMMDD_HHMMSS_hash>.jpg
+  # The folder is the report serial; SQL stores the same serial without the
+  # date dashes (S3 '2026-03-07-001' == SQL '20260307-001'). Filenames carry
+  # NO gross/tare tag, so only the serial group is captured here.
+  # Two folder conventions exist: dashed 'YYYY-MM-DD-NNN' (688 serials) and
+  # flat 'YYYYMMDD-NNN' (12 serials, 2026-03-06/07 only). Both are matched;
+  # 4 serials appear under BOTH and are therefore double-counted here.
+  key_pattern: '(?P<serial>\d{4}-\d{2}-\d{2}-\d{3}|\d{8}-\d{3})'
   # Example once the layout is known, e.g. keys like
   #   "2026/20260306-001/gross_1.jpg"
   # key_pattern: '(?P<serial>\d{8}-\d{3}).*(?P<state>gross|tare)'

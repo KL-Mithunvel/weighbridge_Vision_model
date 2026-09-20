@@ -218,3 +218,62 @@
   the general library kept under `.CLAUDE/`, rather than Tile_Sorting's
   `.CLAUDE/CLAUDE.md` placement — a template repo wants the binding rules
   where the tooling reads them by default.
+
+## 2026-09-20 — Gate 1: AWS image archive inventoried
+
+Owner supplied the IAM access key, so the blocked half of Gate 1 ran.
+
+**Access.** `.env` created from `.env.example` (gitignored; confirmed via
+`git check-ignore` and a repo-wide grep that no key string reaches a tracked
+file). Bucket region confirmed `ap-south-1` via `get_bucket_location`. List
+and read both work — no KMS denial.
+
+> **Security note:** the key pair was pasted into the chat session, which
+> `docs/AWS_ACCESS.md` §6 explicitly forbids. Scope is read-only on one
+> bucket, so exposure is limited, but the key should be rotated. Tracked in
+> `TODO.md`.
+
+**Crawl.** `python development/inventory_s3.py` →
+`docs/data_inventory/s3_summary.json` (committed),
+`data/s3_inventory/s3_objects.jsonl` (gitignored).
+
+- 10,085 objects, all JPEG, **17.64 GB**, 700 serial folders,
+  median 15 photos/serial (min 2, max 18).
+- Layout `weighments-YYYYMM/<serial>/<YYYYMMDD_HHMMSS_hash8>.jpg`.
+- Capture range 2026-03-06 → 2026-08-05. S3 `last_modified` (2026-07-04 →
+  2026-09-19) is a bulk backfill, **not** capture time — do not use it as a
+  date feature.
+
+**Findings that change downstream work:**
+
+1. **SQL ↔ image linkage resolved.** The S3 folder name *is* the report
+   `serial`. Both sides carry two conventions (dashed `YYYY-MM-DD-NNN` and
+   flat `YYYYMMDD-NNN`); normalising both to the flat form joins
+   **687 serials / 9,987 photos (99.0%)**. Closes a long-standing TODO.
+   `inventory.key_pattern` set in `development/config.yaml` to match both —
+   `keys_unmatched` went 130 → 0.
+2. **74 SQL reports (all August) have no images** — the archive stops
+   2026-08-05 while reports run to 2026-08-26. Needs a question to the
+   bucket admin.
+3. **Gross/tare is not encoded anywhere in the key.** Timestamp clustering
+   (split at a >5 min gap) puts **690/700 serials into exactly 2 visits**,
+   median largest gap ~22 min — consistent with weigh-in → dump →
+   weigh-out. Recorded as **PROVISIONAL** per rule 6: inferred from timing,
+   never visually verified. Must be hand-checked before use as a weak label.
+4. **Resolution is heterogeneous** — 26/40 sampled images are 4160x1920
+   (ultra-wide 2.17:1, likely stitched), but the sample also contains
+   1920x1080, several irregular sizes suggesting pre-cropping, and two
+   **portrait** frames (1080x1920, 1920x4160). Aspect spans 0.46–2.17. This
+   is a Gate 1 scale-dependence flag: absolute-pixel values will not
+   transfer, and a naive square resize would distort the majority class.
+5. **All 10,085 objects are `GLACIER_IR`.** Reads are instant but billed
+   per-GB retrieved — a full 17.64 GB pull costs money. Pull once, keep it.
+6. **Split rule is now concrete:** split by `serial`, never by photo — a
+   serial is a median of 15 near-duplicate frames of one truck in one
+   session. De-duplicate the 4 dual-format serials first.
+
+**Gate 1 is not yet closed.** Capture conditions (lighting, angle, distance,
+day/night) were not assessed — the crawl measured resolution only, and that
+needs actually looking at images. Open items in `TODO.md`.
+
+No model or pipeline code was written this session.
