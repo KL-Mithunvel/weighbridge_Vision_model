@@ -237,6 +237,61 @@ full 17.64 GB pull is therefore a **paid** operation, and re-pulling it
 repeatedly is wasteful. Download once to local disk, keep it, and prefer the
 committed JSON summary for anything that does not need pixels.
 
+## SQL verdict distribution — the positive class barely exists (2026-09-20)
+
+Re-read of `ai_report_fields`, de-duplicated to 765 serials:
+
+| field | distribution |
+|---|---|
+| `plate_match` | **748 match**, 9 mismatch, 8 null |
+| `weight_plausible` | **755 plausible**, 2 implausible, 8 null |
+| `consistency_score` | median **0.95**, p10 0.90, min 0.10 — only 19 below 0.8, 12 below 0.7 |
+| `tampering_signs` | **632 empty**, 133 non-empty (64 with one sign, 46 with two) |
+| `flags` | 482 empty, 283 with at least one |
+| `parse_ok` | 765/765 — every row parsed |
+
+**This is a ~1–2% positive rate on an already-unverified label.** Two
+weight-implausible rows in six months is not a trainable signal; it is a
+handful of anecdotes. Combined with the existing "no non-firewood examples"
+gap, the honest position is that this dataset can establish a **false-positive
+floor** for the fraud models and nothing about true-positive sensitivity —
+precisely the Tile_Sorting trap recorded in `docs/TILE_SORTING_CASE_STUDY.md`.
+
+### `tampering_signs` is free text, not a taxonomy
+
+Across all rows the most frequent sign string occurs **twice**. There is no
+repeated categorical vocabulary to learn from — every entry is a bespoke
+sentence. It cannot be used as a label column without a manual
+re-categorisation pass.
+
+### What the flagged cases are actually about
+
+Reading the 12 lowest-consistency reports: almost every anomaly is a
+**document / metadata** discrepancy, not a visual one —
+
+- declared vs slip weight mismatches (`declared tare 4520 kg` vs `1970 kg` on
+  the slip and software screenshot);
+- plate mismatch between gross and tare photos, or between CCTV and the slip
+  (`TN76AH0241` vs `TN76AH0245`);
+- date mismatches, including slips printed with a **2024** date on a 2026
+  transaction;
+- gross and tare recorded 10–28 seconds apart — physically impossible for
+  unloading;
+- material on the slip reading `FULL` or `FUEL` rather than a wood species;
+- missing weigh-slip printout.
+
+**Implication for scope.** The existing LLM system earns most of its value by
+cross-checking numbers and text across slip, software and photos — not by
+looking at firewood. Only a minority of cases are visually detectable, e.g.
+`2026-03-17-002`: *"Vehicle in gross photos is yellow with open bed, while tare
+photos show a green truck with caged sides — possible different vehicles"*.
+That one is a genuine vision positive (vehicle substitution between weighings)
+and is the kind of case the planned models could catch independently.
+
+This argues for treating **OCR of the weigh slip + plate** as first-class
+alongside load classification, since that is where the observed fraud signal
+actually lives. See `docs/ENTRY_ANATOMY.md`.
+
 ## Label provenance and trustworthiness
 
 Every field in `ai_report_fields` is **another AI system's own generated

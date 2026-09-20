@@ -277,3 +277,68 @@ day/night) were not assessed — the crawl measured resolution only, and that
 needs actually looking at images. Open items in `TODO.md`.
 
 No model or pipeline code was written this session.
+
+## 2026-09-20 (2) — One entry pulled end-to-end; code + SQL review
+
+Committed the inventory as `f44bc59`, then pulled `serial 2026-03-19-001`
+(15 photos, `data/s3_inventory/entry_20260319-001/`, gitignored) and read it
+against its SQL row. New doc: `docs/ENTRY_ANATOMY.md`.
+
+**The headline finding: a serial is not a bag of truck photos.** It holds
+four distinct image roles from different sources:
+
+1. `WB INDOOR` CCTV (2688x1520) — office + Essae weight indicator. No view of
+   the truck. Useless for load state; a candidate for indicator OCR.
+2. `WB PLATFORM IN_2` CCTV (1920x1080) — overhead weighbridge deck, plate
+   legible, fixed geometry. Vehicle ID / plate source.
+3. Handheld phone photos (4160x1920 + irregular) — operator walking the
+   trailer. **These are what the four project models are actually about.**
+4. Weigh-slip document photo — a phone shot of the printed slip.
+
+Both CCTV classes carry burned-in camera-name and timestamp overlays; the
+phone photos do not. That explains the resolution spread recorded this
+morning — it is a multi-camera rig, not a single erratic camera. The earlier
+note that "some frames look pre-cropped" was wrong: they are free-pose phone
+shots.
+
+**The weigh slip is printed ground truth.** Slip 228 / 19-03-2026 08:40:07 /
+`TN 76 P 8336` / gross 5830 / tare 3410 / net 2420 / material `KARUVAI`.
+Declared material and declared net weight — the two quantities the fraud
+question turns on — are both machine-readable, once per serial. An OCR pass
+over the slips would beat the LLM prose as a label source. Added to TODO.
+
+Linkage independently confirmed: the SQL row says "Evidence from 15 photos"
+and S3 holds exactly 15 objects for that serial.
+
+**Role split at scale (file-size proxy, PROVISIONAL — validated on one entry
+only):** 3,612 CCTV-sized (<0.8MB, median 0.23MB) vs 6,473 phone-sized
+(median 2.94MB); modal serial 6 CCTV + 9 phone. So the pool of images that
+actually show the load close-up is well under 10,085 — per-class budgets must
+be computed after role separation.
+
+**SQL re-read (765 de-duped serials).** The positive class is effectively
+absent: `plate_match` 748/9, `weight_plausible` 755/2, `consistency_score`
+median 0.95 with 12 rows below 0.7, `tampering_signs` empty in 632. The most
+frequent tampering string occurs *twice* — it is free text, not a taxonomy,
+and cannot be a label column without manual re-categorisation.
+
+Reading the 12 worst rows: nearly every real anomaly is a **document/metadata**
+discrepancy (declared vs slip weights, plate mismatch across gross/tare, slips
+dated 2024, gross and tare 10-28 seconds apart, material printed as `FULL` /
+`FUEL`, missing slip). Only a minority are visually detectable — the best
+example being `2026-03-17-002`, a yellow open-bed truck in gross vs a green
+caged truck in tare. **Scope implication:** the existing system's value is
+mostly cross-checking documents, so slip/plate OCR deserves first-class status
+alongside load classification.
+
+**Code stack review.** Sound overall: I/O and pure logic properly separated
+per rule 1, config-driven per rule 2, botocore errors mapped to the
+`docs/AWS_ACCESS.md` table, 19 tests green, deps pinned with reasons. Four
+defects logged in `TODO.md` — two red: `objects_by_year_month` is built from
+S3 upload time rather than capture time (misleading for Gate 1), and
+`pair_gross_tare` emits permanent zeros because gross/tare is not in the keys.
+Two amber: `download_object` re-downloads unconditionally against `GLACIER_IR`
+storage (costs retrieval fees every run), and `is_image_key` reports one
+undifferentiated image count that overstates the usable pool.
+
+Still no model or pipeline code written. Gate 1 remains open.

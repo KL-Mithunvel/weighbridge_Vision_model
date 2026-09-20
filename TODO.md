@@ -28,9 +28,43 @@
     (`20260307-001`…`-004`) and de-duplicate before any split.
   - [ ] Ask the bucket admin about the 74 August serials that have SQL
     reports but no images (archive stops 2026-08-05, reports run to 08-26).
+  - [ ] **Classify images by role before any dataset prep** — CCTV indoor /
+    CCTV platform / handheld load photo / weigh-slip document. Only the
+    handheld photos are subjects for the load-state and material models
+    (`docs/ENTRY_ANATOMY.md`). Validate the file-size proxy on a larger
+    sample, or classify by the burned-in overlay text.
+  - [ ] **OCR the weigh-slip photos** — they print slip no, date, time, plate,
+    gross/tare/net kg and declared material. That is per-transaction numeric
+    ground truth, far stronger than the LLM prose. ~1 slip per serial.
+
   - [ ] **Rotate the AWS access key** — it was pasted into a chat session on
     2026-09-20, against `docs/AWS_ACCESS.md` §6. Create a new key, delete
     the old one, update `.env`.
+
+## Code stack review (2026-09-20)
+
+Stack is sound — clean I/O vs pure-logic split, no hardcoded params, errors
+mapped to the docs troubleshooting table, 19 passing tests, deps pinned with
+reasons. Four real defects found:
+
+- [ ] 🔴 `summarize_objects` builds `objects_by_year_month` from
+  `last_modified`, which is the **S3 upload time** (a 2026-07→09 bulk
+  backfill), not capture time. As a Gate 1 "when was this data captured"
+  histogram it is actively misleading. Capture time is in the filename
+  (`YYYYMMDD_HHMMSS_`) — derive the month from the key instead.
+- [ ] 🔴 `pair_gross_tare` cannot work as written: gross/tare is not in the
+  keys, so `serials_with_gross_and_tare` / `_gross_only` / `_tare_only` are
+  hardcoded-zero in every summary and read as "no pairs found" rather than
+  "not determinable from keys". Replace with the timestamp-cluster method,
+  or emit an explicit `method: "not_in_key"` field.
+- [ ] 🟡 `download_object` re-downloads unconditionally. Every
+  `inventory_s3.py` run re-pulls the 40-image sample, and all objects are
+  `GLACIER_IR` — **each re-run costs retrieval fees**. Skip when the local
+  file exists with a matching size/etag.
+- [ ] 🟡 `is_image_key` counts every object as one undifferentiated "image",
+  producing `image_objects: 10085`. Now that four image roles are known,
+  that number overstates the usable training pool. Add role classification
+  to the summary.
 
 ## Done
 - [x] Turn claude_MV into the machine-vision baseline/template repo — CLAUDE.md
