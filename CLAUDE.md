@@ -30,13 +30,26 @@ Vision models to build:
 4. **If empty**: is it *actually* empty, or does it still have leftover
    material (rope, wood debris, etc.)? Flag if not truly empty.
 
+**Project direction (owner, 2026-10-03; full text in `docs/PROJECT_SCOPE.md`).**
+An AI agent already audits these transactions in production. It stays — it
+catches unanticipated cases such as manual tampering. The goal is to build
+vision models and ordinary deterministic programs that work *alongside* it and
+take over the predictable checks, one check at a time, each only after it has
+matched or beaten the agent on that check against human labels. The four
+models above are therefore components of a hybrid pipeline, not a replacement
+for the agent. Most observed anomalies are document/metadata discrepancies
+(slip vs declared weights, dates, plates), so slip/plate reading and rule
+checks rank alongside the load-classification models.
+
 - Owner: kl mithunvel (klm@smtw.in)
 - License, runtime (Python version, venv location), entry points: TBD.
-- Current build phase: **Gate 1 (data understanding) in progress.** An
-  existing LLM-based audit system's text verdicts (769 reports, SQL) have
-  been audited — see `docs/DATA_AUDIT.md`. Raw camera images live in AWS
-  and have not yet been inventoried; Gate 1 is not complete until that
-  happens.
+- Current build phase: **Gate 1 (data understanding) in progress.** The
+  existing LLM-based audit system's verdicts (769 reports, SQL) and the AWS
+  camera archive (10,085 photos, inventoried 2026-09-20) have both been
+  audited and linked by serial — see `docs/DATA_AUDIT.md`,
+  `docs/DATA_ISSUES.md` and `docs/ENTRY_ANATOMY.md`. An entry viewer +
+  labelling GUI exists (`python main.py`). Remaining Gate 1 items are in
+  `TODO.md`. Gates 2-4 not started; no model code yet.
 
 ---
 
@@ -272,4 +285,13 @@ always-active ones:
 
 ### Project-Specific Overrides
 
-_None — add below as needed._
+- **Ask the open owner questions at the start of every session.** After the
+  "ok KLM" opener, read `docs/PROJECT_SCOPE.md` section 7 and, if any question
+  there is still marked **Open**, present *all* of the open ones to the owner as
+  a numbered plain-text list (topic + the "Bring" line for each), before
+  starting other work — unless the owner's first message is an urgent,
+  unrelated request, in which case answer that first and then ask. Do not
+  re-ask a question marked Answered. When the owner answers: record the answer
+  under that question, mark it Answered, and fold it into the relevant doc
+  (`docs/PROJECT_SCOPE.md`, `docs/DEPLOYMENT_TARGETS.md`, `docs/DATA_ISSUES.md`,
+  `TODO.md`) in the same session. Remove this rule once no question is Open.

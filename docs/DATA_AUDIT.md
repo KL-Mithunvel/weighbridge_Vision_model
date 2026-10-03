@@ -257,11 +257,14 @@ reports describe photos we cannot see. Open question for the bucket admin.
 
 **AWS only — 9 serials, 98 photos:** `20260307-006`, `20260310-006`,
 `20260310-009`, `20260318-002`, `20260611-002`..`-005`, `20260722-005`.
-In every case the SQL `transaction_id` sequence **skips exactly that
-number** (e.g. `20260307-005` = txn 17, `-007` = txn 19, none for `-006`), so
-the audit system never produced (or lost) a report for these weighments. The
-photos are normal. They are usable for the image models but have no LLM
-verdict to compare against.
+The SQL `transaction_id` runs 1-775 with 10 unused ids (18, 37, 40, 90, 91,
+383-386, 640). **Nine of those ten line up exactly with these nine serials**
+(e.g. `20260307-005` = txn 17, `-007` = txn 19, nothing for `-006`; the four
+`20260611` serials fill 383-386). So the audit system never produced (or lost)
+a report for these weighments. The tenth gap (90 or 91) probably belongs to
+`20260318-001`, which exists in neither source (inferred). The photos are
+normal: usable for the image models, but with no LLM verdict to compare
+against.
 
 **Transaction ids.** `transaction_id` runs 1-775 with 765 distinct values over
 761 serials: the 4 serials stored under both folder spellings
@@ -269,6 +272,23 @@ verdict to compare against.
 six serials have re-run reports (`20260306-001` has 4). Whether the dual-spelling
 pairs are one weighment ingested twice or two weighments is still unconfirmed
 (TODO: byte-compare).
+
+## Further measurements (2026-10-03)
+
+Full list of quirks with IDs: `docs/DATA_ISSUES.md`.
+
+- **Photos per entry** (after merging the 4 dual-spelling pairs): median 15
+  (439 entries), range 2-22. Short entries: `20260309-001` (2 photos),
+  `20260318-002` (2), `20260722-005` (7).
+- **Capture hours** (filename clock, assumed local): 05:00-19:59 only, no
+  night; 66.6% of photos fall 14:00-17:59; 12 photos before 06:00, 18 after
+  19:00. Lighting itself has still not been viewed.
+- **Vehicles recur heavily.** Agent-read plates give 162 distinct values; 86
+  occur in more than one serial, 50 in five or more, the top one in 40
+  serials; repeat plates cover 680 of ~761 serials. Plate strings are
+  LLM-read (may contain OCR errors), but the conclusion stands: **splitting by
+  serial does not stop the same truck appearing in train and test.** Report a
+  by-vehicle split too (DI-23).
 
 ## SQL verdict distribution — the positive class barely exists (2026-09-20)
 

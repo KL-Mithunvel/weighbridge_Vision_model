@@ -52,6 +52,30 @@
     2026-09-20, against `docs/AWS_ACCESS.md` §6. Create a new key, delete
     the old one, update `.env`.
 
+## Added 2026-10-03 (project scope + data issues; see `docs/PROJECT_SCOPE.md`, `docs/DATA_ISSUES.md`)
+
+- [ ] **Owner answers needed — owner is gathering data (asked 2026-10-03; Claude
+  re-asks each session until answered, per `CLAUDE.md`)** (they gate the design): Q1 where declared
+  values live (weighbridge-software data keyed by transaction), Q2 how the
+  agent runs today, Q3 deployment target (Gate 3), Q4 real fraud examples,
+  Q5 acceptable error rates, Q6 valid material list, Q7 the 74 + 9 missing
+  pairs, Q8 which viewer build to keep. Record answers in
+  `docs/PROJECT_SCOPE.md` and `docs/DEPLOYMENT_TARGETS.md`.
+- [ ] Gate 2: run `python tools/compute_survey.py`, log the result.
+- [ ] DI-23: decide the split policy — serial-grouped (in-fleet) vs
+  vehicle-grouped (new-vehicle) — once Gate 3 says which matters.
+- [ ] DI-13 / DI-15: compare filename vs burned-in overlay vs EXIF timestamps
+  on a sample; check whether the JPEGs carry EXIF at all.
+- [ ] 🟡 DI-29: make `write_jsonl` / "Refresh from S3" write to a temp file and
+  rename, so a crash cannot truncate `s3_objects.jsonl`.
+- [ ] DI-31: remove the stale worktree `.CLAUDE/worktrees/agent-aa990c72c55e05d65`
+  and branch `worktree-agent-aa990c72c55e05d65`; consider unifying
+  `.CLAUDE/` vs `.claude/` (both tracked, same folder on Windows).
+- [ ] Owner to compare the Opus viewer (`main`) with the Sonnet build
+  (`sonnet-entry-viewer`, `bc39724`) and pick one; delete the other branch and
+  `../weighbridge_Vision_model_sonnet`.
+- [ ] Verify the viewer visually in a browser (DI-34).
+
 ## Code stack review (2026-09-20)
 
 Stack is sound — clean I/O vs pure-logic split, no hardcoded params, errors

@@ -389,3 +389,32 @@ Still no model or pipeline code written. Gate 1 remains open.
   serials sit exactly at gaps in the SQL transaction_id sequence. Details in
   `docs/DATA_AUDIT.md`. Dual-spelling serials have two txn ids each.
 
+## 2026-10-03 (3) — Project scope reframed; data issues catalogued
+- Owner gave the wider context: an AI agent already audits transactions in
+  production and **stays** (unanticipated cases, e.g. manual tampering); the
+  aim is to build vision models and deterministic programs that work beside it
+  and take over predictable checks one by one, developed on the data gathered
+  so far. Asked for all work and edge cases to be documented.
+- New docs: `docs/PROJECT_SCOPE.md` (direction, hybrid design, 13 candidate
+  components, how a component earns replacing an agent check, work status,
+  8 open questions) and `docs/DATA_ISSUES.md` (34 numbered data/tooling
+  issues DI-01..DI-34 with evidence, impact and status).
+- Updated `CLAUDE.md` Project Overview: direction paragraph, and fixed the
+  stale "images not yet inventoried" line.
+- Verified before writing (new measurements, recorded in `DATA_AUDIT.md`):
+  all 9 AWS-only serials sit at gaps in the SQL transaction sequence (10 gaps
+  in total; the 10th is probably `20260318-001`, in neither source); 162
+  distinct plates cover 680 serials, so **a serial split still leaks vehicle
+  identity**; 66.6% of photos are captured 14:00-17:59, none at night; three
+  entries have <9 photos. Also confirmed `.CLAUDE/` and `.claude/` are both
+  git-tracked (same folder on Windows), which breaks isolated worktrees.
+- Corrected an earlier over-statement: the claim that every AWS-only serial
+  sits at a txn gap is true for all nine but I had only printed five when I
+  made it; now checked for all.
+- Still no model or pipeline code. Gate 1 open; Gates 2-4 not started.
+- Owner asked for the 8 open questions to be put to them; they will gather the
+  data and return. Questions (with "Bring" lines and an Open/Answered status
+  table) now live in `docs/PROJECT_SCOPE.md` section 7, and a rule in root
+  `CLAUDE.md` (Project-Specific Overrides) makes every new session ask any Open
+  question first. Docs committed.
+
