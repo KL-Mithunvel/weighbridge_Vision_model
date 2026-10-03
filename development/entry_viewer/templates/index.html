@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weighment Entry Viewer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="bar">
+    <h1>Weighment Entries</h1>
+    <label>Date
+      <select id="date-select"><option>loading…</option></select>
+    </label>
+    <label>Entry
+      <select id="entry-select"></select>
+    </label>
+    <button id="prev-btn" title="Previous entry (,)">◀</button>
+    <button id="next-btn" title="Next entry (.)">▶</button>
+    <span class="spacer"></span>
+    <label>Labeller
+      <input id="labeller" placeholder="your initials" size="8">
+    </label>
+    <a class="btn" href="/api/labels/export" download="labels_export.json">Export labels</a>
+    <button id="refresh-btn" title="Re-list the S3 bucket (free LIST calls, no image downloads)">Refresh from S3</button>
+  </header>
+
+  <div id="status" class="status" hidden></div>
+
+  <main class="layout">
+    <section class="photos" id="photos">
+      <p class="muted">Pick a date and an entry.</p>
+    </section>
+
+    <aside class="side">
+      <section class="card">
+        <h2>Entry labels</h2>
+        <div id="entry-label-form" class="label-form"></div>
+        <textarea id="entry-notes" placeholder="Entry notes…" rows="3"></textarea>
+        <div class="saved" id="entry-saved"></div>
+      </section>
+      <section class="card">
+        <h2>SQL report <span class="muted small">(existing LLM audit — not ground truth)</span></h2>
+        <div id="report"></div>
+      </section>
+    </aside>
+  </main>
+
+  <div id="lightbox" class="lightbox" hidden>
+    <div class="lb-image">
+      <img id="lb-img" alt="">
+      <div class="lb-loading" id="lb-loading">fetching original from S3…</div>
+    </div>
+    <div class="lb-panel">
+      <div class="lb-head">
+        <span id="lb-title"></span>
+        <button id="lb-close" title="Close (Esc)">✕</button>
+      </div>
+      <div id="lb-meta" class="muted small"></div>
+      <div id="photo-label-form" class="label-form"></div>
+      <textarea id="photo-notes" placeholder="Photo notes… (e.g. rope coiled at rear of bed)" rows="3"></textarea>
+      <div class="saved" id="photo-saved"></div>
+      <div class="lb-nav">
+        <button id="lb-prev">◀ prev (←)</button>
+        <button id="lb-next">next (→) ▶</button>
+      </div>
+      <p class="muted small">Keys: ←/→ photo · Esc close · click a chip to save, click again to clear</p>
+    </div>
+  </div>
+
+  <script>window.VOCAB = {{ vocab | tojson }};</script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

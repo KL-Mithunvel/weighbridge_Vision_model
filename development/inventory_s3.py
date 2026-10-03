@@ -91,6 +91,7 @@ def probe_resolution_sample(
     if Image is None:
         return {"error": "pillow not installed — cannot probe resolution"}
 
+    sizes = {o["key"]: o.get("size") for o in objects}
     image_keys = [o["key"] for o in objects if is_image_key(o["key"], image_extensions)]
     if not image_keys:
         return {"sampled": 0, "note": "no image-extension keys found in the listing"}
@@ -106,7 +107,7 @@ def probe_resolution_sample(
     for key in chosen:
         dest = sample_dir / key.replace("/", "__")
         try:
-            download_object(client, bucket, key, dest)
+            download_object(client, bucket, key, dest, expected_size=sizes.get(key))
             with Image.open(dest) as im:
                 resolutions[f"{im.width}x{im.height}"] = resolutions.get(f"{im.width}x{im.height}", 0) + 1
                 formats[im.format or "?"] = formats.get(im.format or "?", 0) + 1

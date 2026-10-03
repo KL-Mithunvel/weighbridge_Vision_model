@@ -4,9 +4,11 @@ import pytest
 
 from aws_s3 import (
     credentials_status,
+    download_object,
     extract_key_facets,
     is_image_key,
     key_extension,
+    local_copy_is_current,
     pair_gross_tare,
     summarize_objects,
     top_level_prefix,
@@ -161,3 +163,36 @@ def test_pair_gross_tare_counts_pairs():
     assert result["serials_gross_only"] == 1
     assert result["serials_tare_only"] == 1
     assert result["keys_unmatched"] == 1
+
+
+# --------------------------------------------------------------------------- #
+# download_object cache skip (GLACIER_IR retrieval fees)                       #
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize(
+    ("local", "expected", "current"),
+    [(10, 10, True), (10, 11, False), (None, 10, False), (10, None, False)],
+)
+def test_local_copy_is_current(local, expected, current):
+    assert local_copy_is_current(local, expected) is current
+
+
+class _CountingClient:
+    def __init__(self):
+        self.calls = 0
+
+    def download_file(self, bucket, key, dest):
+        self.calls += 1
+        with open(dest, "wb") as fh:
+            fh.write(b"12345")
+
+
+def test_download_object_skips_when_size_matches(tmp_path):
+    client = _CountingClient()
+    dest = tmp_path / "sub" / "obj.jpg"
+    download_object(client, "b", "k", dest, expected_size=5)
+    download_object(client, "b", "k", dest, expected_size=5)
+    assert client.calls == 1
+    download_object(client, "b", "k", dest, expected_size=6)  # size changed -> refetch
+    download_object(client, "b", "k", dest)                   # unknown size -> refetch
+    assert client.calls == 3
+    assert not (tmp_path / "sub" / "obj.jpg.part").exists()

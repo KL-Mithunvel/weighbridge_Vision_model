@@ -6,7 +6,7 @@ pure logic):
 * Network I/O — ``load_dotenv_file``, ``make_client``, ``list_objects``,
   ``download_object``, ``head_object``. These touch AWS and cannot be unit
   tested without credentials.
-* Pure logic — ``credentials_status``, ``key_extension``, ``is_image_key``,
+* Pure logic — ``credentials_status``, ``local_copy_is_current``, ``key_extension``, ``is_image_key``,
   ``top_level_prefix``, ``extract_key_facets``, ``summarize_objects``,
   ``pair_gross_tare``. These take plain dicts / strings and are covered by
   ``tests/test_aws_s3.py``.
@@ -150,15 +150,34 @@ def list_objects(
         raise _wrap_botocore_error(exc) from exc
 
 
-def download_object(client: Any, bucket: str, key: str, dest: Path) -> Path:
-    """Download one object to ``dest`` (parent dirs created). Returns ``dest``."""
+def download_object(
+    client: Any,
+    bucket: str,
+    key: str,
+    dest: Path,
+    expected_size: int | None = None,
+) -> Path:
+    """Download one object to ``dest`` (parent dirs created). Returns ``dest``.
+
+    When ``expected_size`` is given and ``dest`` already exists with that size,
+    the download is skipped — every object in this bucket is ``GLACIER_IR``, so
+    each re-fetch costs a retrieval fee. The body is written to a temp file and
+    renamed, so a reader never sees a half-written ``dest``.
+    """
     from botocore.exceptions import BotoCoreError, ClientError  # noqa: PLC0415
 
+    existing = dest.stat().st_size if dest.exists() else None
+    if local_copy_is_current(existing, expected_size):
+        return dest
+
     dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name(dest.name + ".part")
     try:
-        client.download_file(bucket, key, str(dest))
+        client.download_file(bucket, key, str(tmp))
     except (BotoCoreError, ClientError) as exc:
+        tmp.unlink(missing_ok=True)
         raise _wrap_botocore_error(exc) from exc
+    tmp.replace(dest)
     return dest
 
 
@@ -203,6 +222,14 @@ def credentials_status(env: Mapping[str, str]) -> dict[str, Any]:
         "region": region,
         "has_region": region is not None,
     }
+
+
+def local_copy_is_current(local_size: int | None, expected_size: int | None) -> bool:
+    """True when a local file exists and matches the listed object size.
+
+    Unknown ``expected_size`` means "cannot verify" -> re-download.
+    """
+    return local_size is not None and expected_size is not None and local_size == expected_size
 
 
 def key_extension(key: str) -> str:

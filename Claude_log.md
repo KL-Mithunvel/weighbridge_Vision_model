@@ -342,3 +342,38 @@ storage (costs retrieval fees every run), and `is_image_key` reports one
 undifferentiated image count that overstates the usable pool.
 
 Still no model or pipeline code written. Gate 1 remains open.
+
+## 2026-10-03 — Entry viewer + labelling GUI (Flask)
+- Owner asked for a GUI to browse the S3 archive by date → entry number, with
+  the entry's SQL report alongside, then labelling. Plan agreed in-session:
+  Flask, local only, view first then labels; AWS key rotation deferred (still
+  open in TODO).
+- Built `development/entry_viewer/`: `index.py` (pure: serial normalisation,
+  date/entry index, visit split, role guess, label validation), `sources.py`
+  (download-once image cache + thumbnails, read-only reports, SQLite label
+  store with append-only `label_events`), `app.py` (Flask + CLI), one HTML
+  page. All tunables + the label vocabulary in `config.yaml` → `viewer:`.
+- Decisions: index from the existing crawl JSONL (no S3 calls to browse);
+  dates from the serial folder (capture date), not `last_modified`; images
+  fetched on first view only (GLACIER_IR fees); only indexed keys fetchable;
+  bound to 127.0.0.1; reports DB opened `mode=ro`; labels stored as JSON per
+  (kind, target) so the vocabulary can grow without migrations.
+- Found: SQL serials also use **both** conventions (`2026-03-31-002` dashed
+  alongside `20260306-001`) and some serials have several reports — both
+  normalised / shown as tabs.
+- Fixed the TODO 🟡: `download_object(..., expected_size=)` skips when the
+  cached file matches the listed size, writes via `.part` + rename;
+  `inventory_s3.py` passes sizes.
+- Smoke test on real data: 138 dates, 770 entries (696 with images + 74
+  report-only), 10,085 photos. `2026-03-19-001` splits 7 + 8, matching
+  `docs/ENTRY_ANATOMY.md`; first thumbnail 2.3 s from S3, repeat 5 ms from
+  cache; role guess becomes `cctv_indoor` once resolution is known.
+- Gotcha: Jinja's `tojson` sorts keys by default regardless of
+  `app.json.sort_keys` — set `jinja_env.policies["json.dumps_kwargs"]` too.
+- Tests: 56 pass (`tests/test_entry_viewer.py` new, `test_aws_s3.py`
+  extended). No model or pipeline code; Gate 1 still open.
+- Added root `main.py` (starts the viewer, opens the browser; `--no-browser`)
+  and filed the agreed plan + as-built status as `docs/ENTRY_VIEWER_PLAN.md`.
+  Owner then asked for a Sonnet model to build the same plan independently,
+  for comparison — run in an isolated git worktree.
+

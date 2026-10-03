@@ -305,6 +305,15 @@ verified trust. `plate_match` and `weight_plausible` are the same LLM
 comparing its own read against declared data — internally consistent, not
 independently verified.
 
+**Human labels (new source, 2026-10-03).** `development/entry_viewer/` lets a
+person label photos (role, gross/tare visit, load state, material, residue)
+and whole entries (visit split correct, same vehicle both visits, suspect).
+These live in `data/labels/labels.sqlite3` (gitignored) with an append-only
+`label_events` history recording labeller and timestamp per change. They are
+the first labels in this project that are *not* inherited from another
+system. Commit a JSON snapshot (`app.py --export-labels`) once labelling is
+under way, and record who labelled and against which vocabulary.
+
 ## Splits / scale-dependence
 
 Images are now inventoried (not yet pulled in bulk). The standard rule from

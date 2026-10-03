@@ -49,3 +49,51 @@ paths:
   # Aggregated, committed audit record — counts and histograms only, no image
   # content. This is the Gate 1 artefact that goes in git.
   summary_json: "docs/data_inventory/s3_summary.json"
+
+# --------------------------------------------------------------------------- #
+# Entry viewer + labelling GUI (development/entry_viewer/). Reuses s3.bucket,  #
+# s3.region, s3.prefixes, inventory.key_pattern and paths.objects_jsonl above. #
+# --------------------------------------------------------------------------- #
+viewer:
+  # Local only — the app uses your AWS keys; never bind to 0.0.0.0.
+  host: "127.0.0.1"
+  port: 5050
+  # Downloaded originals + thumbnails. Gitignored (under data/). Every object
+  # is GLACIER_IR, so the cache is what keeps retrieval fees one-off.
+  cache_dir: "data/viewer_cache"
+  thumb_max_px: 360
+  thumb_jpeg_quality: 80
+  # SQL verdicts from the existing LLM audit system. Opened READ-ONLY.
+  reports_db: "data/wb_ai_reports.sqlite3"
+  reports_table: "ai_report_fields"
+  # Human labels written by the GUI. Gitignored; export a JSON snapshot to
+  # commit as the audit trail once labelling is under way.
+  labels_db: "data/labels/labels.sqlite3"
+  # Photos further apart than this start a new "visit". PROVISIONAL — the
+  # DATA_AUDIT.md clustering that put 690/700 serials into exactly 2 visits.
+  visit_gap_minutes: 5
+  # Image-role GUESS (docs/ENTRY_ANATOMY.md). PROVISIONAL — validated on one
+  # entry. Resolution is used once an image is cached; before that, size only.
+  role_guess:
+    by_resolution:
+      "2688x1520": "cctv_indoor"
+      "1920x1080": "cctv_platform"
+      "4160x1920": "phone"
+    # 0.8 MiB — the CCTV/phone byte-size split from ENTRY_ANATOMY.md.
+    cctv_max_bytes: 838861
+    small_unknown: "cctv?"
+    large_unknown: "phone_irregular"   # cropped phone shot OR weigh slip
+  # Labelling vocabulary. The GUI renders exactly these choices; the server
+  # rejects anything else. Adding a value is safe; renaming one orphans
+  # existing labels, so don't.
+  labels:
+    photo:
+      role: ["cctv_indoor", "cctv_platform", "phone_load", "weigh_slip", "other"]
+      visit: ["gross", "tare", "unsure"]
+      load_state: ["loaded", "empty", "partial", "not_visible"]
+      material: ["firewood", "not_firewood", "mixed", "unsure", "n/a"]
+      residue: ["clean", "residue", "unsure", "n/a"]
+    entry:
+      visit_split_correct: ["yes", "no", "unsure"]
+      vehicle_same_both_visits: ["yes", "no", "unsure"]
+      suspect: ["no", "yes", "unsure"]

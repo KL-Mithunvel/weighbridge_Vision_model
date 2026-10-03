@@ -17,6 +17,9 @@ boto3>=1.34            # S3 client for bucket smtw-weighbridge-archive
 python-dotenv>=1.0     # load AWS_* creds from gitignored .env (not auto-read by boto3)
 pillow>=10.0           # probe sampled image resolution / format during inventory
 
+# Gate 1 — entry viewer + labelling GUI (development/entry_viewer/).
+flask>=3.0             # local-only web UI; 3.x for app.json provider (JSON_SORT_KEYS removed)
+
 # Test runner (tests/). Migration to `uv` is planned — prefer `uv pip`/`uv run`
 # when that lands.
 pytest>=8.0

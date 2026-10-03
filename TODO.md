@@ -15,6 +15,14 @@
   - [x] Set `inventory.key_pattern` — layout is
     `weighments-YYYYMM/<serial>/<YYYYMMDD_HHMMSS_hash>.jpg`; both dashed and
     flat serial-folder conventions matched, 0 keys unmatched.
+  - [x] **Entry viewer + labelling GUI built 2026-10-03**
+    (`development/entry_viewer/`, `python development/entry_viewer/app.py`).
+    Date -> entry -> photos (split into visits) beside the SQL report(s);
+    photo + entry labels into `data/labels/labels.sqlite3` with history.
+    This is the tool for the hand-checks below.
+  - [ ] **Do a first labelling pass with the viewer** — a seeded sample of
+    entries across months, labelling photo role + visit + entry
+    `visit_split_correct`. Export a snapshot to `docs/labels/` and commit it.
   - [ ] **Verify the provisional gross/tare split.** Timestamp clustering
     puts 690/700 serials into exactly 2 visits (median ~22 min apart), but
     this is inferred, never eyeballed. Hand-check a sample before it is used
@@ -57,7 +65,7 @@ reasons. Four real defects found:
   hardcoded-zero in every summary and read as "no pairs found" rather than
   "not determinable from keys". Replace with the timestamp-cluster method,
   or emit an explicit `method: "not_in_key"` field.
-- [ ] 🟡 `download_object` re-downloads unconditionally. Every
+- [x] 🟡 **Fixed 2026-10-03.** `download_object` re-downloads unconditionally. Every
   `inventory_s3.py` run re-pulls the 40-image sample, and all objects are
   `GLACIER_IR` — **each re-run costs retrieval fees**. Skip when the local
   file exists with a matching size/etag.
