@@ -75,9 +75,12 @@ function parseList(value) {
 // ------------------------------------------------------------ date / entry
 async function loadDates() {
   const dates = await api("/api/dates");
-  $("date-select").innerHTML = dates.map((d) =>
-    `<option value="${d.date}">${d.date} · ${d.entries} entries · ${d.photos} photos</option>`
-  ).join("");
+  $("date-select").innerHTML = dates.map((d) => {
+    const flags = [];
+    if (d.without_images) flags.push(`${d.without_images} without photos`);
+    if (d.without_report) flags.push(`${d.without_report} without report`);
+    return `<option value="${d.date}">${d.date} · ${d.entries} entries · ${d.photos} photos${flags.length ? " · ⚠ " + flags.join(", ") : ""}</option>`;
+  }).join("");
   return dates;
 }
 
@@ -86,8 +89,8 @@ async function loadEntries(date, selectSerial) {
   const rows = await api(`/api/dates/${date}/entries`);
   $("entry-select").innerHTML = rows.map((r) => {
     const bits = [
-      r.photos ? `${r.photos} photos` : "NO IMAGES",
-      r.reports ? `report${r.reports > 1 ? " ×" + r.reports : ""} ✓` : "no report",
+      r.photos ? `${r.photos} photos` : "⚠ NO PHOTOS (SQL only)",
+      r.reports ? `report${r.reports > 1 ? " ×" + r.reports : ""} ✓` : "⚠ NO REPORT (AWS only)",
     ];
     if (r.duplicate_folders) bits.push("⚠ dup folders");
     if (r.labelled) bits.push("labelled ✓");
@@ -125,12 +128,20 @@ function renderPhotos(entry) {
       <span class="muted">${esc(entry.date)} · folder${entry.folders.length > 1 ? "s" : ""}: ${entry.folders.map(esc).join(", ") || "—"}</span>
       ${entry.folders.length > 1 ? '<span class="badge warn">stored under both folder conventions — may contain duplicates</span>' : ""}
     </div>`;
+  const noReport = !entry.reports.length
+    ? `<div class="notice warn"><strong>No SQL report for this entry.</strong>
+        The photos are in the S3 archive but the LLM audit system never produced a report for this serial
+        (its transaction numbers skip here). Nothing is wrong with the photos.</div>` : "";
   if (!state.photos.length) {
-    host.innerHTML = head + `<p class="muted">No images in the S3 archive for this serial (report-only entry).</p>`;
+    host.innerHTML = head + `<div class="notice warn"><strong>No photos for this entry.</strong>
+        This serial has an SQL report but nothing in the S3 archive. All such entries are from
+        2026-08-06 onward — the archive's last photos are from 2026-08-05, while reports continue to 2026-08-26.
+        The report is still shown on the right; it describes photos we cannot see. Ask the bucket admin whether
+        the August photos exist elsewhere.</div>`;
     return;
   }
   let flat = 0;
-  host.innerHTML = head + entry.visits.map((visit) => {
+  host.innerHTML = head + noReport + entry.visits.map((visit) => {
     const first = visit.photos[0], last = visit.photos[visit.photos.length - 1];
     const tiles = visit.photos.map((p) => {
       const i = flat++;
@@ -159,6 +170,19 @@ function renderPhotos(entry) {
 }
 
 // ----------------------------------------------------------------- report
+const HELP = {
+  created: "When the LLM audit report was generated (IST), and the weighment transaction id.",
+  plate: "Vehicle number plate as read from the photos by the LLM. The tick says whether it matched the declared vehicle.",
+  weight: "Did the LLM judge the declared weight plausible for the load it saw?",
+  consistency: "The LLM's own overall confidence (0-1) that everything agrees. Not ground truth.",
+  load: "Free-text description of the load the LLM saw.",
+  tampering: "Free-text list of anything suspicious the LLM noticed. Not a fixed category list.",
+  flags: "Short warning tags raised by the LLM.",
+  summary: "One-paragraph verdict.",
+  feedback: "Extra remarks the LLM added, often about missing or unreadable evidence.",
+};
+const tip = (k) => `title="${esc(HELP[k])}"`;
+
 const BOOL = (v) => v === 1 ? '<span class="ok">✓ yes</span>' : v === 0 ? '<span class="bad">✗ no</span>' : '<span class="muted">—</span>';
 
 function renderReport(reports) {
@@ -180,15 +204,15 @@ function renderReport(reports) {
     };
     $("report-body").innerHTML = `
       <dl class="report">
-        <dt>created</dt><dd>${esc(r.created_at)} · txn ${esc(r.transaction_id)}</dd>
-        <dt>plate (OCR)</dt><dd><code>${esc(r.plate_ocr) || "—"}</code> ${BOOL(r.plate_match)}</dd>
-        <dt>weight plausible</dt><dd>${BOOL(r.weight_plausible)}</dd>
-        <dt>consistency</dt><dd>${score == null ? "—" : `<span class="meter"><span style="width:${Math.round(score * 100)}%"></span></span> ${score.toFixed(2)}`}</dd>
-        <dt>load</dt><dd>${esc(r.load_assessment)}</dd>
-        <dt>tampering</dt><dd>${list(r.tampering_signs)}</dd>
-        <dt>flags</dt><dd>${list(r.flags)}</dd>
-        <dt>summary</dt><dd>${esc(r.summary)}</dd>
-        <dt>feedback</dt><dd>${esc(r.feedback) || '<span class="muted">—</span>'}</dd>
+        <dt ${tip('created')}>created</dt><dd>${esc(r.created_at)} · txn ${esc(r.transaction_id)}</dd>
+        <dt ${tip('plate')}>plate (OCR)</dt><dd><code>${esc(r.plate_ocr) || "—"}</code> ${BOOL(r.plate_match)}</dd>
+        <dt ${tip('weight')}>weight plausible</dt><dd>${BOOL(r.weight_plausible)}</dd>
+        <dt ${tip('consistency')}>consistency</dt><dd>${score == null ? "—" : `<span class="meter"><span style="width:${Math.round(score * 100)}%"></span></span> ${score.toFixed(2)}`}</dd>
+        <dt ${tip('load')}>load</dt><dd>${esc(r.load_assessment)}</dd>
+        <dt ${tip('tampering')}>tampering</dt><dd>${list(r.tampering_signs)}</dd>
+        <dt ${tip('flags')}>flags</dt><dd>${list(r.flags)}</dd>
+        <dt ${tip('summary')}>summary</dt><dd>${esc(r.summary)}</dd>
+        <dt ${tip('feedback')}>feedback</dt><dd>${esc(r.feedback) || '<span class="muted">—</span>'}</dd>
       </dl>`;
     host.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", Number(b.dataset.i) === i));
   };
@@ -298,6 +322,8 @@ function wire() {
   $("entry-select").addEventListener("change", (e) => loadEntry(e.target.value).catch(fail));
   $("prev-btn").addEventListener("click", () => state.entry?.prev && loadEntry(state.entry.prev).catch(fail));
   $("next-btn").addEventListener("click", () => state.entry?.next && loadEntry(state.entry.next).catch(fail));
+  $("coverage-btn").addEventListener("click", () => showCoverage().catch(fail));
+  $("coverage-close").addEventListener("click", () => { $("coverage").hidden = true; });
   $("lb-close").addEventListener("click", closeLightbox);
   $("lb-prev").addEventListener("click", () => stepLightbox(-1));
   $("lb-next").addEventListener("click", () => stepLightbox(1));
@@ -331,6 +357,26 @@ function wire() {
     } else if (e.key === "," && state.entry?.prev) loadEntry(state.entry.prev).catch(fail);
     else if (e.key === "." && state.entry?.next) loadEntry(state.entry.next).catch(fail);
   });
+}
+
+// ----------------------------------------------------------------- coverage
+async function showCoverage() {
+  const cov = await api("/api/coverage");
+  const group = (title, note, serials) => `
+    <div><h3>${title} — ${serials.length}</h3><div class="muted small">${note}</div>
+      <div class="serial-list">${serials.map((s) => `<button data-serial="${s}">${s}</button>`).join("") || '<span class="muted">none</span>'}</div></div>`;
+  $("coverage-body").innerHTML = `<div class="cols">
+      ${group("In both", "photos in S3 and a SQL report", cov.both)}
+      ${group("AWS only", "photos but no SQL report", cov.aws_only)}
+      ${group("SQL only", "SQL report but no photos in S3", cov.sql_only)}
+    </div>`;
+  $("coverage").hidden = false;
+  $("coverage-body").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    const serial = b.dataset.serial;
+    const date = `${serial.slice(0, 4)}-${serial.slice(4, 6)}-${serial.slice(6, 8)}`;
+    loadEntries(date, serial).catch(fail);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }));
 }
 
 function fail(err) {

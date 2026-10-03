@@ -84,6 +84,11 @@ How it behaves:
   with every change. Labels go to `data/labels/labels.sqlite3` (gitignored);
   the vocabulary is `viewer.labels` in `config.yaml` (add values freely, never
   rename one — existing labels would be orphaned).
+- **Text size**: fixed 18px root, smallest text ~14px (no resize control); all sizes are rem so
+  one number (`html { font-size }` in `style.css`) rescales the page.
+- **Coverage** button: lists serials in both / AWS-only / SQL-only; click one
+  to jump to it. Dates and entries that lack photos or a report are flagged ⚠
+  in the dropdowns and explained in a banner.
 - Bound to `127.0.0.1` only — it uses your AWS keys.
 
 ### Tests

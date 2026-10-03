@@ -120,6 +120,10 @@ def create_app(config: dict[str, Any], client_factory: Any = None) -> Flask:
     def dates():  # noqa: ANN202
         return jsonify(ix.list_dates(state.index, state.reports))
 
+    @app.get("/api/coverage")
+    def coverage():  # noqa: ANN202
+        return jsonify(ix.reconcile(state.index, state.reports))
+
     @app.get("/api/dates/<date>/entries")
     def entries(date: str):  # noqa: ANN202
         done = labels.labelled_serials()

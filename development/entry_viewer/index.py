@@ -129,14 +129,42 @@ def list_dates(
     index: Mapping[str, Mapping[str, Any]],
     reports: Mapping[str, list[Any]],
 ) -> list[dict[str, Any]]:
-    """One row per capture date: entry, photo and report counts."""
+    """One row per capture date: entry, photo and report counts, plus mismatches."""
     by_date: dict[str, dict[str, int]] = {}
     for serial, entry in index.items():
-        row = by_date.setdefault(entry["date"], {"entries": 0, "photos": 0, "with_report": 0})
+        row = by_date.setdefault(
+            entry["date"],
+            {"entries": 0, "photos": 0, "with_report": 0, "without_images": 0, "without_report": 0},
+        )
         row["entries"] += 1
         row["photos"] += len(entry["photos"])
-        row["with_report"] += 1 if reports.get(serial) else 0
+        has_report = bool(reports.get(serial))
+        row["with_report"] += 1 if has_report else 0
+        row["without_images"] += 0 if entry["photos"] else 1
+        row["without_report"] += 0 if has_report else 1
     return [{"date": d, **counts} for d, counts in sorted(by_date.items())]
+
+
+def reconcile(
+    index: Mapping[str, Mapping[str, Any]],
+    reports: Mapping[str, list[Any]],
+) -> dict[str, list[str]]:
+    """Which serials exist in the S3 archive, in the SQL reports, or both.
+
+    ``index`` should already include report-only entries (``add_report_only_entries``),
+    so an entry with no photos is SQL-only and an entry with no report is AWS-only.
+    """
+    both, aws_only, sql_only = [], [], []
+    for serial in sorted(index):
+        has_photos = bool(index[serial]["photos"])
+        has_report = bool(reports.get(serial))
+        if has_photos and has_report:
+            both.append(serial)
+        elif has_photos:
+            aws_only.append(serial)
+        elif has_report:
+            sql_only.append(serial)
+    return {"both": both, "aws_only": aws_only, "sql_only": sql_only}
 
 
 def list_entries(

@@ -377,3 +377,15 @@ Still no model or pipeline code written. Gate 1 remains open.
   Owner then asked for a Sonnet model to build the same plan independently,
   for comparison — run in an isolated git worktree.
 
+## 2026-10-03 (2) — Viewer readability + AWS/SQL reconciliation
+- Owner: text too small; why do some entries show no photos; explain SQL vs
+  photos; are there entries in AWS but not SQL, and vice versa.
+- GUI: root font 14 -> 18px with all sizes in rem, A-/A+ control, bigger
+  thumbnails/chips, tooltips on SQL fields, explanatory banners for
+  no-photo / no-report entries, flagged dropdowns, **Coverage** panel
+  (`/api/coverage`, pure `reconcile()` in index.py). 58 tests pass. Not yet
+  eyeballed in a browser by me.
+- Finding: 687 in both, 9 AWS-only, 74 SQL-only (all 2026-08-06+). AWS-only
+  serials sit exactly at gaps in the SQL transaction_id sequence. Details in
+  `docs/DATA_AUDIT.md`. Dual-spelling serials have two txn ids each.
+

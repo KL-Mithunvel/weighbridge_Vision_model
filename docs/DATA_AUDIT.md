@@ -237,6 +237,39 @@ full 17.64 GB pull is therefore a **paid** operation, and re-pulling it
 repeatedly is wasteful. Download once to local disk, keep it, and prefer the
 committed JSON summary for anything that does not need pixels.
 
+## AWS <-> SQL reconciliation (2026-10-03)
+
+Both sides normalised to `YYYYMMDD-NNN` (S3 folders and SQL rows each use both
+the dashed and flat spellings). Reproduce with the viewer's **Coverage** button
+or `GET /api/coverage`.
+
+| | serials |
+|---|---|
+| In S3 (photos) | 696 |
+| In SQL (reports) | 761 |
+| **In both** | **687** |
+| **AWS only** (photos, no report) | **9** |
+| **SQL only** (report, no photos) | **74** |
+
+**SQL only — all 74 are 2026-08-06 -> 2026-08-26.** The archive stops at
+2026-08-05 (last photo serial `20260805-004`); reports run on to 08-26. These
+reports describe photos we cannot see. Open question for the bucket admin.
+
+**AWS only — 9 serials, 98 photos:** `20260307-006`, `20260310-006`,
+`20260310-009`, `20260318-002`, `20260611-002`..`-005`, `20260722-005`.
+In every case the SQL `transaction_id` sequence **skips exactly that
+number** (e.g. `20260307-005` = txn 17, `-007` = txn 19, none for `-006`), so
+the audit system never produced (or lost) a report for these weighments. The
+photos are normal. They are usable for the image models but have no LLM
+verdict to compare against.
+
+**Transaction ids.** `transaction_id` runs 1-775 with 765 distinct values over
+761 serials: the 4 serials stored under both folder spellings
+(`20260307-001`..`-004`) each have **two** transaction ids (e.g. 9 and 13) and
+six serials have re-run reports (`20260306-001` has 4). Whether the dual-spelling
+pairs are one weighment ingested twice or two weighments is still unconfirmed
+(TODO: byte-compare).
+
 ## SQL verdict distribution — the positive class barely exists (2026-09-20)
 
 Re-read of `ai_report_fields`, de-duplicated to 765 serials:

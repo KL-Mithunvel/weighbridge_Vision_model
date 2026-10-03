@@ -85,8 +85,8 @@ def test_report_only_entries_and_listing():
 
     dates = ix.list_dates(index, reports)
     assert dates == [
-        {"date": "2026-03-07", "entries": 1, "photos": 1, "with_report": 1},
-        {"date": "2026-08-07", "entries": 1, "photos": 0, "with_report": 1},
+        {"date": "2026-03-07", "entries": 1, "photos": 1, "with_report": 1, "without_images": 0, "without_report": 0},
+        {"date": "2026-08-07", "entries": 1, "photos": 0, "with_report": 1, "without_images": 1, "without_report": 0},
     ]
     rows = ix.list_entries(index, reports, "2026-03-07")
     assert rows == [
@@ -226,7 +226,7 @@ def viewer(tmp_path):
 def test_dates_entries_and_entry_payload(viewer):
     client, _, keys = viewer
     assert client.get("/api/dates").get_json() == [
-        {"date": "2026-03-19", "entries": 2, "photos": 3, "with_report": 1}
+        {"date": "2026-03-19", "entries": 2, "photos": 3, "with_report": 1, "without_images": 0, "without_report": 1}
     ]
     entries = client.get("/api/dates/2026-03-19/entries").get_json()
     assert [e["number"] for e in entries] == ["001", "002"]
@@ -276,3 +276,26 @@ def test_page_keeps_label_vocab_in_config_order(viewer):
     html = client.get("/").get_data(as_text=True)
     # config order is role -> load_state; Jinja's default would sort them.
     assert html.index('"role"') < html.index('"load_state"')
+
+
+def test_reconcile_splits_both_aws_only_sql_only():
+    index = ix.build_index(
+        [_obj("w/2026-03-07-001/20260307_121000_a.jpg"), _obj("w/2026-03-07-002/20260307_130000_b.jpg")],
+        KEY_PATTERN, EXTS,
+    )
+    reports = ix.group_reports(
+        [{"serial": "20260307-001", "created_at": "x"}, {"serial": "20260807-004", "created_at": "y"}]
+    )
+    ix.add_report_only_entries(index, reports)
+    assert ix.reconcile(index, reports) == {
+        "both": ["20260307-001"],
+        "aws_only": ["20260307-002"],
+        "sql_only": ["20260807-004"],
+    }
+
+
+def test_coverage_endpoint(viewer):
+    client, _, _ = viewer
+    assert client.get("/api/coverage").get_json() == {
+        "both": ["20260319-001"], "aws_only": ["20260319-002"], "sql_only": [],
+    }

@@ -34,6 +34,9 @@
     square resize distorts the ultra-wide majority.
   - [ ] Byte-compare the 4 serials stored under both folder conventions
     (`20260307-001`…`-004`) and de-duplicate before any split.
+  - [ ] Decide what to do with the **9 AWS-only serials** (98 photos, no SQL
+    report; txn ids skip those numbers) — see `docs/DATA_AUDIT.md`
+    reconciliation section.
   - [ ] Ask the bucket admin about the 74 August serials that have SQL
     reports but no images (archive stops 2026-08-05, reports run to 08-26).
   - [ ] **Classify images by role before any dataset prep** — CCTV indoor /

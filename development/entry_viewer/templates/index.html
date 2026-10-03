@@ -18,6 +18,7 @@
     <button id="prev-btn" title="Previous entry (,)">◀</button>
     <button id="next-btn" title="Next entry (.)">▶</button>
     <span class="spacer"></span>
+    <button id="coverage-btn" title="Which entries exist in AWS only / SQL only">Coverage</button>
     <label>Labeller
       <input id="labeller" placeholder="your initials" size="8">
     </label>
@@ -27,6 +28,11 @@
 
   <div id="status" class="status" hidden></div>
 
+  <section id="coverage" class="card coverage" hidden>
+    <h2>Coverage — S3 photos vs SQL reports <button id="coverage-close" style="float:right">✕</button></h2>
+    <div id="coverage-body"></div>
+  </section>
+
   <main class="layout">
     <section class="photos" id="photos">
       <p class="muted">Pick a date and an entry.</p>
@@ -34,14 +40,14 @@
 
     <aside class="side">
       <section class="card">
+        <h2>SQL report <span class="muted small">(existing LLM audit — not ground truth)</span></h2>
+        <div id="report"></div>
+      </section>
+      <section class="card">
         <h2>Entry labels</h2>
         <div id="entry-label-form" class="label-form"></div>
         <textarea id="entry-notes" placeholder="Entry notes…" rows="3"></textarea>
         <div class="saved" id="entry-saved"></div>
-      </section>
-      <section class="card">
-        <h2>SQL report <span class="muted small">(existing LLM audit — not ground truth)</span></h2>
-        <div id="report"></div>
       </section>
     </aside>
   </main>
