@@ -32,6 +32,37 @@ independently confirms the serial↔folder linkage.
 
 ---
 
+## How the app creates an entry (added 2026-10-08)
+
+From the source app (<https://github.com/smtwkla/WeighBridge> v0.5.6; full
+detail in `docs/REFERENCE_IMPLEMENTATION.md` section 4). It explains the
+worked example below:
+
+- **Two CCTV frames per phase here, but the app is configured for three
+  sources** (Hikvision NVR ch 7 + ch 8 at 1920x1080, a CP Plus camera at
+  2688x1520). One button press captures all sources for that phase, so a
+  full entry has 3 CCTV x 2 phases = **6 CCTV frames** — the modal count we
+  measured. The `WB INDOOR` 2688x1520 frame is the CP Plus camera. This entry
+  has only 2 per phase, so one source was missing or failed (`failed_sources`
+  is tolerated by the app).
+- **CCTV was switched on 2026-03-13 (high-res 03-18)**, and is an off-by-
+  default setting — hence entries with no CCTV (84 of them).
+- **Phone photos are uploaded through the web page**; each upload is stored
+  against the Gross or Tare tab (`weighment_media.type` = `l` / `e`). The
+  gross/tare split is therefore *recorded in the app's DB*, not only inferable
+  from time gaps. We do not have that table yet.
+- **The filename time is the server's receive time in IST**, not the moment the
+  photo was taken. CCTV: when the button was pressed. Phone: when the upload
+  finished (could lag the shot). EXIF, if present, holds the real capture time.
+  CCTV frames never have EXIF.
+- **The slip photo is just another upload** to either phase; the app does not
+  mark it as a slip.
+- The agent saw **at most 16** of the photos (first 8 per phase), so for the
+  15-photo example it saw all of them; an entry with more would be partly
+  unseen.
+
+---
+
 ## The four image roles
 
 ### 1. `WB INDOOR` — CCTV, 2688x1520
@@ -120,7 +151,9 @@ after role separation, not before.
 
 ## Gross vs tare
 
-Still not encoded anywhere in the key. The two-visit timestamp split (see
+Still not encoded anywhere in the key. **Update 2026-10-08:** it *is*
+recorded in the app's database (`weighment_media.type`, `l` = gross, `e` =
+tare), which we do not have yet (Q1). Until then, the two-visit timestamp split (see
 `docs/DATA_AUDIT.md`) is the working method and remains **provisional**. This
 entry supports it cleanly: cluster 1 loaded, cluster 2 empty, 18 min apart.
 

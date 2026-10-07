@@ -41,6 +41,10 @@ for the agent. Most observed anomalies are document/metadata discrepancies
 (slip vs declared weights, dates, plates), so slip/plate reading and rule
 checks rank alongside the load-classification models.
 
+- Source system (read-only reference): the production app
+  <https://github.com/smtwkla/WeighBridge> (private; v0.5.6 read 2026-10-08).
+  What we took from it is in `docs/REFERENCE_IMPLEMENTATION.md`. Never edit it
+  from here.
 - Owner: kl mithunvel (klm@smtw.in)
 - License, runtime (Python version, venv location), entry points: TBD.
 - Current build phase: **Gate 1 (data understanding) in progress.** The

@@ -72,6 +72,35 @@ Also: online or fully offline? What happens when the network is down?
 
 ---
 
+## Known facts for this project (2026-10-08 — from the source app, not a decision)
+
+Source: <https://github.com/smtwkla/WeighBridge> v0.5.6; details in
+`docs/REFERENCE_IMPLEMENTATION.md` section 2. The questionnaire above is
+**still unanswered**; these facts only narrow it.
+
+- **Existing system runs on-prem**: Docker Compose on one Proxmox VM
+  (`10.24.0.112`), Python 3.14 backend, MariaDB 11.8, Redis, separate worker
+  containers (AI worker, Tally worker). Media on a Kerberos NFS share. So a
+  new check can reasonably be a further worker container in that stack.
+- **Today's AI check is a hosted API** (xAI Grok, internet needed, up to 3
+  retries 10 min apart). It runs *after* the incharge has prepared the invoice
+  (`invoice_draft`), not during weighing, so latency tolerance is minutes,
+  not seconds, for that step. A check placed earlier (at weighing time, to
+  warn the supervisor) would have a much tighter budget — a design choice
+  for the owner.
+- **Cameras and the app share the LAN**; the backend pulls CCTV snapshots over
+  HTTP digest auth (Hikvision ISAPI / CP Plus ONVIF) on button press, one
+  frame per source per phase. Not a continuous video stream.
+- **Not known**: whether the VM has a GPU or how much RAM/CPU is spare; if
+  offline operation is required; whether the weighbridge PC (Windows, runs
+  the Essae software) is a possible host. Hosted training platforms stay a
+  dead end unless weights export (rule above); nothing in the app requires
+  that, so local training is the safe default.
+- **Offline use is not a current requirement of the app** (its spec lists
+  offline/PWA as out of scope), but the S3 archive and Grok need internet.
+
+---
+
 ## Recording the decision
 
 Log in `Claude_log.md` (and the project charter/docs if durable):

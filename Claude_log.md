@@ -418,3 +418,39 @@ Still no model or pipeline code written. Gate 1 remains open.
   `CLAUDE.md` (Project-Specific Overrides) makes every new session ask any Open
   question first. Docs committed.
 
+
+## 2026-10-08 — Source application read and documented
+- Owner pointed at the real implementation, <https://github.com/smtwkla/WeighBridge>,
+  and asked for everything we need to be documented here without editing it
+  there, and the link recorded.
+- Web fetch returned 404 (private repo). `git clone` worked with the owner's
+  stored credentials; cloned read-only into the scratchpad (not the project),
+  read `main` = `36022b2` v0.5.6 (144 commits, first 2026-03-03). Nothing in
+  the source repo was modified or pushed.
+- New: `docs/REFERENCE_IMPLEMENTATION.md` (link, agent spec, how entries are
+  produced, schema, archive/retention, deployment, discrepancies, new questions).
+- Updated: `docs/PROJECT_SCOPE.md` (source link; agent section; Q1/Q2/Q3/Q6/Q7
+  notes; new Q9-Q11; next steps), `docs/DEPLOYMENT_TARGETS.md` (known facts),
+  `docs/ENTRY_ANATOMY.md` (how the app builds an entry), `docs/DATA_ISSUES.md`
+  (annotations + DI-35..DI-44, rules 8-9), `TODO.md`, root `CLAUDE.md` overview.
+- Key findings: the agent is xAI Grok (`grok-4-0709` Mar-Sep 2026, `grok-4.7`
+  from 2026-09-23), sees <=16 photos and the declared data; the declared values
+  live in `weighment_transactions`; gross/tare is stored per photo
+  (`weighment_media.type`); file-name times are server IST receive times; the
+  74 "SQL-only" August serials match the 45-day S3 archive delay exactly;
+  media is deleted at 24 months; the app is MariaDB, not SQLite.
+- Verified against our snapshot: `feedback` rate collapses after the
+  2026-08-08 prompt change; 8 reports with null `plate_match` are unparsed
+  output (4 fenced JSON, 4 empty) and `parse_ok` does not flag them.
+- Inferences marked *[inferred]* in the docs (74 serials still on NFS; 9
+  AWS-only = aborted/failed; 6 CCTV = 3 sources x 2 phases) need confirmation.
+- Gate status unchanged: Gate 1 in progress; no model code written.
+- 2026-10-08 (later): owner answered Q9 (typed "qn 8"): the 1.5 T / 8 T fraud was
+  under an older manual system; weights are now read from the scale. Checked the
+  source: the app has no scale integration, gross/tare are typed number fields,
+  so the typing step from software/slip into the app remains. Recorded in
+  `PROJECT_SCOPE.md` Q9, `DATA_ISSUES.md` DI-41, `REFERENCE_IMPLEMENTATION.md`.
+- 2026-10-08 (later): owner said there is only one weighbridge (typed "9";
+  filed under Q10). DI-38 handled; clay/scrap-paper question (DI-37) still open.
+- 2026-10-08 (later): owner confirmed scope is firewood only for now. Q10 answered;
+  DI-37 handled as scope boundary.

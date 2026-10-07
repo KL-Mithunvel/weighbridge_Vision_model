@@ -76,6 +76,27 @@
   `../weighbridge_Vision_model_sonnet`.
 - [ ] Verify the viewer visually in a browser (DI-34).
 
+## Added 2026-10-08 (source app read; see `docs/REFERENCE_IMPLEMENTATION.md`, DI-35..DI-44)
+
+- [x] Read the production app <https://github.com/smtwkla/WeighBridge>
+  (v0.5.6, `36022b2`, read-only) and document it: agent, schema, CCTV capture,
+  archive/retention, deployment, discrepancies.
+- [ ] **When the owner's DB file arrives (Q1)**: it is likely MariaDB-derived,
+  not native SQLite — confirm format; inspect against the expected tables in
+  `REFERENCE_IMPLEMENTATION.md` section 5; join `weighment_media.type`
+  (gross/tare) and `source` to S3 keys; use `status` to explain the 9 AWS-only
+  serials and the id gaps; check real `source` values (`capture` vs `nvr`, DI-43).
+- [ ] Ask the owner Q9 (how weights are entered), Q10 (clay/paper, other
+  bridges), Q11 (which camera is which); ask IT to copy the 2026-08-06+ photos
+  from the NFS share, then re-crawl S3 (DI-05).
+- [ ] Keep a local copy of the images the models need — S3 deletes at 24
+  months (DI-42).
+- [ ] Handle agent-version drift (DI-35) and the 8 unparsed reports (DI-36)
+  in the label table; they are not caught by `parse_ok`.
+- [ ] Evaluate whether new checks could run as another worker container in
+  the existing Docker stack (Gate 3; see `docs/DEPLOYMENT_TARGETS.md` "Known
+  facts") once the GPU/RAM of that VM is known.
+
 ## Code stack review (2026-09-20)
 
 Stack is sound — clean I/O vs pure-logic split, no hardcoded params, errors
