@@ -1,0 +1,9 @@
+# Config for the OCR benchmark tooling (development/ocr/). Paths relative to repo root.
+sample:
+  seed: 7
+  serials_per_month: 14        # stratified across months in s3_objects.jsonl
+  handheld_min_bytes: 1000000  # >1 MB = handheld phone photo (docs/ENTRY_ANATOMY.md)
+  cctv_max_bytes: 700000       # <0.7 MB = CCTV frame
+  last_handheld_n: 3           # slip photo is usually among the last uploads
+  out_dir: data/ocr_sample
+  workers: 8

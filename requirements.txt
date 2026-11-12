@@ -23,3 +23,15 @@ flask>=3.0             # local-only web UI; 3.x for app.json provider (JSON_SORT
 # Test runner (tests/). Migration to `uv` is planned — prefer `uv pip`/`uv run`
 # when that lands.
 pytest>=8.0
+
+# OCR benchmark (development/ocr/) — added 2026-11-13. torch/torchvision are the
+# CUDA 12.4 builds, installed manually (see header note): torch 2.6.0+cu124.
+easyocr>=1.7
+rapidocr-onnxruntime>=1.2     # PaddleOCR models via ONNX
+python-doctr>=1.0
+opencv-python-headless>=4.9
+ultralytics>=8.3              # YOLO plate detector
+transformers>=5.0             # VLM / GOT-OCR2 engines
+accelerate>=1.0
+rapidfuzz>=3.0
+fast-plate-ocr>=1.0           # plate-crop recognizer
