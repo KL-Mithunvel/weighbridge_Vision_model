@@ -4,6 +4,17 @@ sample:
   serials_per_month: 14        # stratified across months in s3_objects.jsonl
   handheld_min_bytes: 1000000  # >1 MB = handheld phone photo (docs/ENTRY_ANATOMY.md)
   cctv_max_bytes: 700000       # <0.7 MB = CCTV frame
-  last_handheld_n: 3           # slip photo is usually among the last uploads
+  last_handheld_n: 2           # slip photo is usually among the last uploads
   out_dir: data/ocr_sample
   workers: 8
+
+runs:
+  out_dir: data/ocr_runs       # raw per-image engine output (gitignored)
+
+plates:
+  detector_weights: data/models/plate_det/license-plate-finetune-v1m.pt   # morsetechlab/yolov11-license-plate-detection (HF)
+  conf: 0.25
+  imgsz: 1280
+  crop_pad: 0.08          # fractional padding around the detected box
+  crops_dir: data/ocr_runs/plate_crops
+  detections_json: data/ocr_runs/plate_detections.json
